@@ -88,11 +88,14 @@ func newInstanceHealthCollector() *instanceHealthCollector {
 				"completekey",
 				"name",
 				"description",
+				"ishealthy",
 				"failurereason",
 				"application",
+				"time",
 				"severity",
 				"documentation",
 				"tag",
+				"healthy",
 				"fqdn",
 			},
 			nil,
@@ -147,7 +150,7 @@ func (collector *instanceHealthCollector) Collect(ch chan<- prometheus.Metric) {
 	log.Debug("get url: ", url)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Warn("http.Get base URL returned an error:", err)
+		log.Warn("http.DefaultClient.Do base URL returned an error:", err)
 		ch <- prometheus.MustNewConstMetric(collector.instanceHealthUpMetric, prometheus.GaugeValue, 0, "", *fqdn)
 		return
 	}
@@ -177,11 +180,14 @@ func (collector *instanceHealthCollector) Collect(ch chan<- prometheus.Metric) {
 			metric.CompleteKey,
 			metric.Name,
 			metric.Description,
+			strconv.FormatBool(metric.IsHealthy),
 			metric.FailureReason,
 			metric.Application,
+			strconv.FormatInt(metric.Time, 10),
 			metric.Severity,
 			metric.Documentation,
 			metric.Tag,
+			strconv.FormatBool(metric.Healthy),
 			*fqdn,
 		)
 	}
