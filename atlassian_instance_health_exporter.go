@@ -31,6 +31,7 @@ var (
 	help          = flag.Bool("help", false, "pass help will display this helpful dialog output.")
 	port          = flag.String("svc.port", "9998", "set the port that this service will listen on")
 	protocal      = flag.String("app.protocal", "https", "set the protocal for the application. [http|https]")
+	scrapeTimeout = flag.Int("svc.timeout", 10, "set the timeout this service will allow to check the url. by default prometheus scrape_timeout is 10 seconds. if you know the scrape may take longer, this can be adjusted.")
 	token         = flag.String("app.token", "", "REQUIRED: set the basic token for the service to make requests as")
 
 	usageMessage = "The Atlassin Instance Health Exporter is used in conjunction with the Atlassian\n" +
@@ -41,9 +42,14 @@ var (
 		"this container will turn the endpoint into metrics.\n" +
 		"\nReference:\n" +
 		"https://confluence.atlassian.com/support/instance-health-790796828.html\n" +
-		"\nUsage: " + exporterName + " [Arguments...]\n" +
+		"\nUsage: " + exporterName + "_exporter [Arguments...]\n" +
 		"\nArguments:"
 )
+
+// client is used by the Collect operation to get the url defined.
+var client = http.Client{
+	Timeout: time.Duration(*scrapeTimeout) * time.Second,
+}
 
 // Instance Health structure associated with the endpoint.
 type instanceHealthEndpoint struct {
@@ -132,10 +138,10 @@ func (collector *instanceHealthCollector) Collect(ch chan<- prometheus.Metric) {
 
 	startTime := time.Now()
 
-	log.Debug("create a request object")
+	log.Debug("create a new request object")
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		log.Error("http.NewRequest returned an error:", err)
+		log.Error("http.NewRequest returned an error: ", err)
 	}
 
 	log.Debug("create a basic auth string from argument passed")
@@ -148,9 +154,9 @@ func (collector *instanceHealthCollector) Collect(ch chan<- prometheus.Metric) {
 	req.Header.Add("content-type", "application/json")
 
 	log.Debug("get url: ", url)
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
-		log.Warn("http.DefaultClient.Do base URL returned an error:", err)
+		log.Warn("the client.Do request returned an error: ", err)
 		ch <- prometheus.MustNewConstMetric(collector.instanceHealthUpMetric, prometheus.GaugeValue, 0, "", *fqdn)
 		return
 	}
@@ -162,7 +168,7 @@ func (collector *instanceHealthCollector) Collect(ch chan<- prometheus.Metric) {
 	log.Debug("get the body out of the response")
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Error("ioutil.ReadAll returned an error:", err)
+		log.Error("ioutil.ReadAll returned an error: ", err)
 	}
 
 	log.Debug("turn the response body into a map")
@@ -265,7 +271,7 @@ func main() {
 	// check for debug option, adjust if set
 	if *debug {
 		log.SetLevel(log.DebugLevel)
-		log.Debug("Log Level: debug")
+		log.Debug("set log level: debug")
 	}
 
 	// Create a new instance of the Collector and then
@@ -273,7 +279,7 @@ func main() {
 	exporter := newInstanceHealthCollector()
 	prometheus.MustRegister(exporter)
 
-	log.Info("starting...")
+	log.Debug("starting...")
 
 	log.Debug("create http server listening at: ", *address, ":", *port)
 	srv := http.Server{
