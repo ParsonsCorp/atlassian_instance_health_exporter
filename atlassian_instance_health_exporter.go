@@ -145,7 +145,7 @@ func (collector *instanceHealthCollector) Collect(ch chan<- prometheus.Metric) {
 	}
 
 	log.Debug("create a basic auth string from argument passed")
-	basic := "Basic " + *token
+	basic := "Bearer " + *token
 
 	log.Debug("add authorization header to the request")
 	req.Header.Add("Authorization", basic)
