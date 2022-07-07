@@ -95,7 +95,7 @@ If you receive a 403, most likely the account is not a Confluence or Jira Admini
 Thank you everyone that writes code and docs!
 
 * [https://golang.org/](https://golang.org/)
-* [https://rsmitty.github.io/Prometheus-Exporters/](https://rsmitty.github.io/Prometheus-Exporters/)
+* [https://rsmitty.github.io/Prometheus-Exporters-Revamp/](https://rsmitty.github.io/Prometheus-Exporters-Revamp/)
 * [https://prometheus.io/](https://prometheus.io/)
 * [https://github.com/Sirupsen/logrus](https://github.com/Sirupsen/logrus)
 * [https://www.atlassian.com/](https://www.atlassian.com/)
